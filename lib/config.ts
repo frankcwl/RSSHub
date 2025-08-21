@@ -185,6 +185,10 @@ export type Config = {
     guozaoke: {
         cookies?: string;
     };
+    hanime1: {
+        username?: string;
+        password?: string;
+    };
     hefeng: {
         key?: string;
     };
@@ -656,6 +660,10 @@ const calculateValue = () => {
         },
         guozaoke: {
             cookies: envs.GUOZAOKE_COOKIES,
+        },
+        hanime1: {
+            username: envs.HANIME1_USERNAME,
+            password: envs.HANIME1_PASSWORD,
         },
         hefeng: {
             key: envs.HEFENG_KEY,
