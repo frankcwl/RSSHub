@@ -103,7 +103,6 @@ async function handler() {
                         referer: baseUrl,
                         'user-agent': config.trueUA,
                     },
-                    timeout: 5000,
                 });
                 const $ = load(pageResponse);
                 const video = $.root().find('video');
