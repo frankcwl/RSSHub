@@ -3,6 +3,7 @@ import ofetch from '@/utils/ofetch';
 import { config } from '@/config';
 import { load } from 'cheerio';
 import cache from '@/utils/cache';
+import ConfigNotFoundError from '@/errors/types/config-not-found';
 
 export const route: Route = {
     path: '/subscriptions',
@@ -28,7 +29,7 @@ async function handler() {
     const password = config.hanime1.password;
 
     if (!username || !password) {
-        throw new Error('Missing username and password.');
+        throw new ConfigNotFoundError('Missing Hanime1 username and password.');
     }
 
     const cookies = await cache.tryGet(
