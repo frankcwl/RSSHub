@@ -2,6 +2,7 @@ import { Route } from '@/types';
 import ofetch from '@/utils/ofetch';
 import { config } from '@/config';
 import { load } from 'cheerio';
+import cache from '@/utils/cache';
 
 async function handler(ctx) {
     const { params } = ctx.req.param();
@@ -38,15 +39,65 @@ async function handler(ctx) {
         .map((item) => {
             const element = $(item);
             const title = element.attr('title');
-            const videoLink = element.find('a.overlay').attr('href');
+            const author = element.find('.card-mobile-user').text();
+            const link = element.find('a.overlay').attr('href');
             const imageSrc = element.find('img[style*="object-fit: cover"]').attr('src'); // 选择缩略图
 
             return {
                 title,
-                link: videoLink,
+                link,
+                author,
                 description: `<img src="${imageSrc}">`,
             };
         });
+
+    const detailedItems = await Promise.all(
+        items.map((item) =>
+            cache.tryGet(<string>item.link, async () => {
+                const pageResponse = await ofetch(<string>item.link, {
+                    retryStatusCodes: [400, 403, 408, 409, 419, 425, 429, 500, 502, 503, 504],
+                    headers: {
+                        referer: baseUrl,
+                        'user-agent': config.trueUA,
+                    },
+                });
+                const $ = load(pageResponse);
+                const video = $.root().find('video');
+                const largeImageSrc = video.attr('poster');
+                const source = video.find('source[size="1080"]');
+                const videoLink = source.attr('src');
+                const contentType = source.attr('type');
+                const videoDescription = $.root().find('div.video-caption-text').text();
+                if (videoLink) {
+                    const videoResponse = await ofetch.raw(videoLink, {
+                        method: 'HEAD',
+                        retryStatusCodes: [400, 403, 408, 409, 419, 425, 429, 500, 502, 503, 504],
+                        headers: {
+                            referer: baseUrl,
+                            'user-agent': config.trueUA,
+                        },
+                    });
+                    const contentLength = Number.parseInt(<string>videoResponse.headers.get('content-length'));
+                    return {
+                        title: item.title,
+                        link: item.link,
+                        author: item.author,
+                        description: `<img src="${largeImageSrc}">` + videoDescription,
+                        enclosure_url: videoLink,
+                        enclosure_length: contentLength,
+                        enclosure_type: contentType,
+                    };
+                } else {
+                    return {
+                        title: item.title,
+                        link: item.link,
+                        author: item.author,
+                        description: item.description,
+                    };
+                }
+            })
+        )
+    );
 
     // 最多显示三个标签
     const maxTagsToShow = 3;
@@ -57,7 +108,7 @@ async function handler(ctx) {
     return {
         title: feedTitle,
         link,
-        item: items,
+        item: detailedItems,
     };
 }
 
