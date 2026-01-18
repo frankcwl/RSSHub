@@ -48,6 +48,7 @@ export type Config = {
         failoverTimeout?: number;
         healthCheckInterval?: number;
     };
+    flaresolverrUrl?: string;
     pacUri?: string;
     pacScript?: string;
     // access control
@@ -523,6 +524,7 @@ const calculateValue = () => {
             failoverTimeout: toInt(envs.PROXY_FAILOVER_TIMEOUT, 5000),
             healthCheckInterval: toInt(envs.PROXY_HEALTH_CHECK_INTERVAL, 60000),
         },
+        flaresolverrUrl: envs.FLARESOLVERR_URL,
         pacUri: envs.PAC_URI,
         pacScript: envs.PAC_SCRIPT,
         // access control
